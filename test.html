@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>מנפה שגיאות API</title>
+    <style>
+        body { font-family: monospace; background: #000; color: #00ff00; padding: 20px; }
+        .error { color: #ff4444; font-weight: bold; border: 1px solid red; padding: 10px; }
+        .success { color: #44ff44; }
+        #raw-output { background: #111; padding: 15px; border: 1px solid #333; white-space: pre-wrap; word-break: break-all; }
+        .info { color: #888; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>בדיקת תגובת שרת גולמית</h1>
+    <div id="status" class="info">מבצע בקשה...</div>
+    
+    <h3>מה חזר מהשרת (Raw Response):</h3>
+    <div id="raw-output">ממתין לנתונים...</div>
+
+    <script>
+        async function debugAPI() {
+            const output = document.getElementById('raw-output');
+            const status = document.getElementById('status');
+            
+            try {
+                // ננסה להשתמש בפרוקסי אחר אם הקודם נחסם
+                const target = "https://api.tzevaadom.co.il/notifications?";
+                const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(target)}&cache=${Date.now()}`;
+                
+                status.innerText = "פונה ל-Proxy: " + proxy;
+
+                const response = await fetch(proxy);
+                const data = await response.json(); // זה ה-JSON של הפרוקסי
+                
+                // כאן הבעיה: אם ה-contents הוא HTML ולא JSON
+                const content = data.contents;
+                output.innerText = content;
+
+                if (content.trim().startsWith("<!DOCTYPE")) {
+                    status.innerHTML = "<span class='error'>שגיאה: השרת החזיר דף HTML (כנראה דף חסימה) במקום נתונים.</span>";
+                } else {
+                    try {
+                        const parsed = JSON.parse(content);
+                        status.innerHTML = "<span class='success'>הצלחה! הנתונים פוענחו כ-JSON תקין.</span>";
+                        console.log("Parsed Data:", parsed);
+                    } catch (e) {
+                        status.innerHTML = "<span class='error'>התקבל טקסט, אבל הוא לא JSON תקין.</span>";
+                    }
+                }
+
+            } catch (err) {
+                status.innerHTML = "<span class='error'>שגיאה קריטית ב-Fetch: " + err.message + "</span>";
+                output.innerText = "לא ניתן היה לקבל תגובה בכלל.";
+            }
+        }
+
+        debugAPI();
+    </script>
+</body>
+</html>
