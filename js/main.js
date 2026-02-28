@@ -3,10 +3,11 @@
 window.currentView = 'map';
 
 function initMain() {
+    // Correct order of initialization
     window.initAlerts();
     window.initMedia();
 
-    // Toggle logic for Map / TV navigation
+    // Toggle logic
     const toggle = document.getElementById('view-toggle');
     if (toggle) {
         toggle.onclick = () => {
@@ -15,7 +16,7 @@ function initMain() {
         };
     }
 
-    // Default view state
+    // Set map as default view
     window.toggleView('map');
 }
 
@@ -30,7 +31,7 @@ function toggleView(view) {
         toggle.classList.remove('tv-active');
     }
 
-    // Toggle Content Containers (Switch between Map and Video)
+    // Toggle Content Containers
     const mapContainer = document.getElementById('map-view');
     const tvContainer = document.getElementById('tv-view');
 
@@ -43,5 +44,8 @@ function toggleView(view) {
     }
 }
 
+// Global Exports
 window.toggleView = toggleView;
+
+// Run when everything is loaded
 document.addEventListener('DOMContentLoaded', initMain);

@@ -16,10 +16,9 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    padding: 0;
 }
 
-/* Top Bar */
+/* Top Bar & Search */
 .header {
     padding: 10px 20px;
     background: #1a1a1a;
@@ -36,6 +35,24 @@ body {
     gap: 20px;
 }
 
+.search-box {
+    display: flex;
+    gap: 5px;
+    background: #252525;
+    padding: 5px;
+    border-radius: 8px;
+    border: 1px solid #444;
+}
+
+.search-box input {
+    background: transparent;
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    outline: none;
+    width: 150px;
+}
+
 #main-container {
     display: flex;
     flex: 1;
@@ -43,29 +60,24 @@ body {
     overflow: hidden;
 }
 
+#map {
+    flex: 1;
+    z-index: 1;
+}
+
 /* View Containers */
 .view-container {
     flex: 1;
     display: none;
     position: relative;
-    height: 100%;
 }
 
 .view-container.active {
     display: flex;
 }
 
-/* Right Side: Map or TV Content */
-#content-area {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-}
-
-/* Side Panel (Alerts Area) */
 #side-panel {
-    width: 350px;
+    width: 320px;
     background: var(--panel-bg);
     border-left: 1px solid #333;
     display: flex;
@@ -73,42 +85,108 @@ body {
     z-index: 5;
 }
 
-.panel-header {
-    padding: 15px;
-    background: #222;
+.sidebar-tabs {
+    display: flex;
+    background: #1a1a1a;
     border-bottom: 1px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.alert-tabs {
-    display: flex;
-    background: #111;
-    padding: 5px;
-    gap: 5px;
 }
 
 .tab-btn {
     flex: 1;
-    background: #252525;
-    color: #888;
+    padding: 10px;
+    background: transparent;
     border: none;
-    padding: 8px;
+    color: #888;
     cursor: pointer;
-    font-size: 0.8rem;
-    border-radius: 4px;
+    font-weight: bold;
+    font-size: 0.9em;
+    transition: all 0.2s;
 }
 
 .tab-btn.active {
-    background: var(--accent-red);
     color: white;
+    background: #252525;
+    border-bottom: 2px solid var(--accent-red);
 }
 
 #alerts-content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+#alerts-list {
     padding: 15px;
     overflow-y: auto;
     flex: 1;
+}
+
+/* Alert Card */
+.alert-card {
+    background: #222;
+    border-right: 4px solid var(--accent-red);
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+/* Marker Styles */
+.alert-marker {
+    width: 25px;
+    height: 25px;
+    background: rgba(255, 62, 62, 0.6);
+    border: 2px solid #ff3e3e;
+    border-radius: 50%;
+    animation: pulse-marker 1.2s infinite;
+}
+
+@keyframes pulse-marker {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(3);
+        opacity: 0;
+    }
+}
+
+.controls {
+    position: absolute;
+    bottom: 20px;
+    right: 320px;
+    z-index: 1000;
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    background: #d32f2f;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    filter: brightness(1.2);
 }
 
 /* Toggle Button */
@@ -156,106 +234,67 @@ body {
     color: white;
 }
 
-/* TV Overlay & Channels */
-#videoChanel {
-    width: 100%;
-    height: 100%;
+/* TV View Styles */
+#tv-view {
     background: #000;
-}
-
-.chanels-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.9);
-    z-index: 2000;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.4s ease;
-}
-
-.chanels-hide {
-    transform: translateY(-100%);
-}
-
-.chanels-show {
-    transform: translateY(0);
-}
-
-.chanel-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    padding: 20px;
     gap: 20px;
 }
 
-.chanel-btn {
-    padding: 20px 40px;
-    font-size: 1.5rem;
-    background: #222;
-    color: white;
-    border: 2px solid #444;
+.tv-main-screen {
+    flex: 1;
+    background: #111;
+    border: 2px solid #333;
     border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+}
+
+.tv-placeholder {
+    color: #444;
+    text-align: center;
+}
+
+.tv-placeholder i {
+    font-size: 4rem;
+    margin-bottom: 10px;
+}
+
+.channel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.channel-card {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
     cursor: pointer;
     transition: all 0.2s;
 }
 
-.chanel-btn:hover {
+.channel-card:hover {
+    background: #252525;
     border-color: var(--accent-blue);
-    background: #333;
+    transform: translateY(-2px);
 }
 
-.close-btn {
-    margin-top: 30px;
-    background: #d32f2f;
-    border: none;
-    color: white;
-    padding: 10px 30px;
-    border-radius: 8px;
-    cursor: pointer;
+.channel-card.active {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
 }
 
-/* Map Controls */
-.controls {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    z-index: 1000;
-    display: flex;
-    gap: 10px;
-}
-
-.btn {
-    background: #d32f2f;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-iframe {
-    border: none;
-}
-
-/* Stats/Utility styles */
-.range-controls {
-    margin-top: 20px;
-    border-top: 1px solid #333;
-    padding-top: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.range-controls input {
-    background: #111;
-    border: 1px solid #444;
-    color: white;
-    padding: 5px;
-    border-radius: 4px;
+.channel-icon {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+    color: var(--accent-blue);
 }
