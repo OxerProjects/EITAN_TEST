@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>מערכת צבע אדום עם מפה חיה</title>
-    
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
+
     <style>
         :root {
             --background-color: #121212;
@@ -70,9 +71,49 @@
             animation: slideIn 0.3s ease-out;
         }
 
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(3);
+                opacity: 0;
+            }
+        }
+
+        .alert-marker {
+            width: 12px;
+            height: 12px;
+            background: #ff4444;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .alert-marker::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: rgba(255, 68, 68, 0.4);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
         @keyframes slideIn {
-            from { transform: translateX(50px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+            from {
+                transform: translateX(50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         .test-btn {
@@ -83,13 +124,26 @@
             background: #d32f2f;
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 25px;
+            padding: 12px 24px;
+            border-radius: 30px;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+            font-weight: bold;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .test-btn:hover {
+            background: #ff1744;
+            transform: scale(1.05);
+        }
+
+        .test-btn.multi {
+            left: 180px;
+            background: #2e7d32;
         }
     </style>
 </head>
+
 <body>
 
     <div class="header">
@@ -106,6 +160,7 @@
     </div>
 
     <button class="test-btn" onclick="simulateAlert()">בדיקה ידנית (שדרות)</button>
+    <button class="test-btn multi" onclick="simulateMultiAlert()">בדיקה מרובת ערים</button>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -119,33 +174,69 @@
 
         const markers = {}; // שומר מרקרים כדי שלא נצייר אותם פעמיים
 
+        // שלוחת חיפוש מיקומים
+        let cityData = null;
+
+        async function loadCities() {
+            try {
+                const targetUrl = "https://www.tzevaadom.co.il/static/cities.json?v=";
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&cache=${Date.now()}`;
+
+                const response = await fetch(proxyUrl);
+                const data = await response.json();
+                const content = JSON.parse(data.contents);
+                cityData = content.cities;
+                console.log("נתוני ערים נטענו בהצלחה");
+            } catch (e) {
+                console.error("שגיאה בטעינת נתוני ערים:", e);
+            }
+        }
+
+        loadCities();
+
         // --- 2. לוגיקת ההתראות ---
         let Alerts = [];
         const alertsList = document.getElementById('alerts-list');
 
-        function handleRedAlert(cityName, id) {
+        function handleRedAlert(cities, id) {
+            // הפיכה למערך אם זו עיר בודדת (תאימות לאחור)
+            const citiesArray = Array.isArray(cities) ? cities : [cities];
+
             // שינוי רקע
             document.body.style.setProperty('--background-color', 'var(--alert-color)');
-            
-            // הוספה לרשימה
-            if (!Alerts.some(a => a.id === id && a.title === cityName)) {
-                addAlertToUI(cityName);
-                Alerts.push({id, title: cityName});
-                
-                // עדכון מפה (כאן אנחנו משתמשים בשמות ערים. במערכת מלאה צריך קואורדינטות)
-                // לצורך הדוגמה, נשתמש בחיפוש מיקום פשוט
-                updateMap(cityName);
+
+            const cityCoords = [];
+
+            citiesArray.forEach(cityName => {
+                // הוספה לרשימה אם לא קיים כבר לאותו מזהה
+                if (!Alerts.some(a => a.id === id && a.title === cityName)) {
+                    addAlertToUI(cityName);
+                    Alerts.push({ id, title: cityName });
+
+                    const coords = updateMap(cityName);
+                    if (coords) cityCoords.push(coords);
+                }
+            });
+
+            // אם יש מיקומים חדשים, ננסה להראות את כולם
+            if (cityCoords.length > 0) {
+                const bounds = L.latLngBounds(cityCoords);
+                if (cityCoords.length === 1) {
+                    map.flyTo(cityCoords[0], 12);
+                } else {
+                    map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+                }
             }
 
-            // החזרה למצב רגיל אחרי 10 שניות (בשביל הוויזואליות)
+            // החזרה למצב רגיל אחרי 15 שניות
             setTimeout(() => {
                 document.body.style.setProperty('--background-color', '#121212');
-            }, 10000);
+            }, 15000);
         }
 
         function addAlertToUI(cityName) {
             if (alertsList.innerHTML.includes("ממתין")) alertsList.innerHTML = "";
-            
+
             const div = document.createElement('div');
             div.className = 'alert-card';
             div.innerHTML = `
@@ -155,29 +246,37 @@
             alertsList.insertBefore(div, alertsList.firstChild);
         }
 
-        async function updateMap(cityName) {
-            // בגרסה האמיתית שלך, יש לך את CITIES_JSON. פה אני משתמש ב-Geocoding בסיסי או מיקומים קבועים
-            // נסמלץ מיקום עבור הבדיקה (שדרות):
-            let lat = 31.5221, lon = 34.5955; 
+        function updateMap(cityName) {
+            if (!cityData) return null;
 
-            // יצירת מרקר אדום מהבהב
-            const marker = L.circleMarker([lat, lon], {
-                color: 'red',
-                fillColor: '#f03',
-                fillOpacity: 0.5,
-                radius: 20
-            }).addTo(map);
+            const cityInfo = cityData[cityName];
+            if (!cityInfo) {
+                console.warn(`העיר ${cityName} לא נמצאה במאגר המידע`);
+                return null;
+            }
 
+            const lat = cityInfo.lat;
+            const lon = cityInfo.lng;
+            const coords = [lat, lon];
+
+            // יצירת אייקון מותאם אישית מהבהב
+            const pulseIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: "<div class='alert-marker'></div>",
+                iconSize: [12, 12],
+                iconAnchor: [6, 6]
+            });
+
+            const marker = L.marker(coords, { icon: pulseIcon }).addTo(map);
             marker.bindPopup(`<b>צבע אדום: ${cityName}</b>`).openPopup();
-            
-            // קפיצה לעיר
-            map.flyTo([lat, lon], 12);
 
-            // הסרת המרקר אחרי דקה
-            setTimeout(() => map.removeLayer(marker), 60000);
+            // הסרת המרקר אחרי 3 דקות (יותר זמן כדי שייראו את כולם)
+            setTimeout(() => map.removeLayer(marker), 180000);
+
+            return coords;
         }
 
-        // --- 3. משיכת נתונים מה-API (עם ה-Proxy שעובד לך) ---
+        // --- 3. משיכת נתונים מה-API ---
         async function fetchAlerts() {
             try {
                 const targetUrl = "https://api.tzevaadom.co.il/notifications";
@@ -189,9 +288,8 @@
 
                 if (Array.isArray(content) && content.length > 0) {
                     content.forEach(alert => {
-                        alert.cities.forEach(city => {
-                            handleRedAlert(city, alert.notificationId);
-                        });
+                        // מעבירים את כל הערים של ההתראה יחד לטיפול
+                        handleRedAlert(alert.cities, alert.notificationId);
                     });
                 }
             } catch (e) {
@@ -204,7 +302,12 @@
             handleRedAlert("שדרות", "test-" + Date.now());
         }
 
+        function simulateMultiAlert() {
+            handleRedAlert(["שדרות", "נתיבות", "אשקלון"], "test-multi-" + Date.now());
+        }
+
         fetchAlerts();
     </script>
 </body>
+
 </html>
