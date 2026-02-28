@@ -123,153 +123,127 @@
 
     <script>
         const r = document.querySelector(':root');
-        let backgroundColor;
-        const alertButton = document.querySelector('#alertButton');
-        const testButton = document.getElementById("test");
-        const alertsDiv = document.getElementById("alerts");
+let backgroundColor;
+const alertButton = document.querySelector('#alertButton');
+const testButton = document.getElementById("test");
+const alertsDiv = document.getElementById("alerts");
 
-        let detectedRedAlert = false;
-        let count = 0;
-        let Alerts = JSON.parse(localStorage.getItem('storedAlerts')) || [];
+let detectedRedAlert = false;
+let count = 0;
+// טעינת היסטוריה מ-LocalStorage
+let Alerts = JSON.parse(localStorage.getItem('storedAlerts')) || [];
 
-        function getBackground() {
-            const rs = getComputedStyle(r);
-            backgroundColor = rs.getPropertyValue('--background-color').trim() || "#121212";
-        }
-        getBackground();
+// קריאת צבע הרקע ההתחלתי
+function getBackground() {
+    const rs = getComputedStyle(r);
+    backgroundColor = rs.getPropertyValue('--background-color').trim() || "#1a1a1a";
+}
+getBackground();
 
-        function alertBackground() {
-            r.style.setProperty('--background-color', 'var(--alert-color)');
-        }
+function alertBackground() {
+    r.style.setProperty('--background-color', 'var(--alert-color)');
+}
 
-        function deAlertBackground() {
-            r.style.setProperty('--background-color', backgroundColor);
-        }
+function deAlertBackground() {
+    r.style.setProperty('--background-color', backgroundColor);
+}
 
-        if (alertButton) {
-            alertButton.addEventListener('click', () => {
-                detectedRedAlert ? deAlertBackground() : alertBackground();
-                detectedRedAlert = !detectedRedAlert;
-            });
-        }
+// פונקציה להוספת התראה לרשימה עם מזהה (ID) כדי למנוע כפילויות במטחים
+function addAlertEntry(title, id) {
+    const now = new Date();
+    const timestamp = now.toLocaleTimeString('he-IL');
+    
+    // בדיקה אם ההתראה כבר קיימת (לפי ID או לפי שם באותו זמן קרוב)
+    const isDuplicate = Alerts.some(a => (a.id === id && a.title === title));
+    if (isDuplicate) return;
 
-        function addAlertEntry(title, id) {
-            const now = new Date();
-            const timestamp = now.toLocaleTimeString('he-IL');
-            
-            if (Alerts.find(a => a.id === id && a.title === title)) return;
+    const alertData = { title, time: timestamp, id: id };
+    Alerts.unshift(alertData);
+    Alerts = Alerts.slice(0, 50); // שומרים 50 התראות אחרונות
+    localStorage.setItem('storedAlerts', JSON.stringify(Alerts));
 
-            const alertData = { title, time: timestamp, id: id };
-            Alerts.unshift(alertData);
-            Alerts = Alerts.slice(0, 50);
-            localStorage.setItem('storedAlerts', JSON.stringify(Alerts));
+    const alertHTML = `
+      <div class="alt" style="animation: fadeIn 0.5s ease-out; margin-bottom: 8px; padding: 10px; border-bottom: 1px solid #444; background: rgba(0,0,0,0.1);">
+        <div class="altTitle" style="font-weight: 600; font-size: 1.1em; color: white;">${title}</div>
+        <div style="font-size: 0.8em; color: #bbb;">${timestamp}</div>
+      </div>
+    `;
+    if (alertsDiv) alertsDiv.insertAdjacentHTML("afterbegin", alertHTML);
+}
 
-            const alertHTML = `
-              <div class="alt" style="animation: fadeIn 0.4s ease-out; margin-bottom: 8px; padding: 12px; background: rgba(255,255,255,0.05); border-right: 4px solid #f44336; border-radius: 4px;">
-                <div style="font-weight: 600; font-size: 1.1em; color: white; margin-bottom: 4px;">${title}</div>
-                <div style="font-size: 0.8em; color: #aaa;">${timestamp}</div>
-              </div>
-            `;
-            if (alertsDiv) alertsDiv.insertAdjacentHTML("afterbegin", alertHTML);
-        }
+// חיבור למפה - פונקציה שמפעילה את הציור על המפה מ-app.js
+function updateMapAlert(cityName) {
+    if (typeof addMapMarker === 'function') {
+        addMapMarker(cityName);
+    }
+}
 
-        function updateMapLocation(cityName) {
-            // קריאה לפונקציות המפה של app.js אם קיימות (לא יקרוס אם חסר)
-            if (typeof City !== 'undefined' && typeof currentCities !== 'undefined') {
-                const city = new City(cityName, 0, false, Math.floor(Date.now() / 1000));
-                if (!currentCities.some(c => c.name === cityName)) {
-                    currentCities.push(city);
-                    if (typeof updateAlertsUI === 'function') updateAlertsUI();
-                }
-            }
-        }
+function handleRedAlert(area, id) {
+    if (!detectedRedAlert) {
+        alertBackground();
+        detectedRedAlert = true;
+        count = 0;
+    }
+    addAlertEntry(area, id);
+    updateMapAlert(area);
+}
 
-        function handleRedAlert(area, id) {
-            if (!detectedRedAlert) {
-                alertBackground();
-                detectedRedAlert = true;
-                count = 0;
-            }
-            addAlertEntry(area, id);
-            updateMapLocation(area);
-        }
+// משיכת התראות מה-API
+async function getAlerts() {
+    try {
+        // הוספת timestamp כדי למנוע מהדפדפן להביא תוצאה ישנה מהזיכרון (Cache)
+        const response = await fetch(`https://api.tzevaadom.co.il/notifications?t=${Date.now()}`);
+        const alertData = await response.json();
 
-        async function getAlerts() {
-            try {
-                const targetUrl = "https://api.tzevaadom.co.il/notifications";
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&cache=${Date.now()}`;
-                
-                const response = await fetch(proxyUrl);
-                const data = await response.json();
-                const content = data.contents;
-
-                // הבדיקה הקריטית - האם קיבלנו דף חסימה HTML?
-                if (!content || content.trim().startsWith("<!DOCTYPE") || content.trim().startsWith("<html")) {
-                    console.log("ה-Proxy חסום זמנית. מנסה שוב בעוד 3 שניות...");
-                    setTimeout(getAlerts, 3000);
-                    return;
-                }
-
-                let parsedAlerts = [];
-                try {
-                    parsedAlerts = JSON.parse(content);
-                } catch (parseError) {
-                    setTimeout(getAlerts, 3000);
-                    return;
-                }
-
-                if (Array.isArray(parsedAlerts) && parsedAlerts.length > 0) {
-                    parsedAlerts.forEach(notification => {
-                        const id = notification.notificationId;
-                        if (notification.cities) {
-                            notification.cities.forEach(city => {
-                                handleRedAlert(city, id);
-                            });
-                        }
+        // ה-API הזה מחזיר מערך של אובייקטים שבתוכם יש שדה cities
+        if (Array.isArray(alertData)) {
+            alertData.forEach(notification => {
+                if (notification.cities && Array.isArray(notification.cities)) {
+                    notification.cities.forEach(cityName => {
+                        handleRedAlert(cityName, notification.notificationId);
                     });
                 }
+            });
+        }
 
-                if (detectedRedAlert) {
-                    count++;
-                    if (count > 60) {
-                        deAlertBackground();
-                        detectedRedAlert = false;
-                        count = 0;
-                        if (typeof restartData === 'function') restartData();
-                    }
-                }
-
-                setTimeout(getAlerts, 1000);
-
-            } catch (err) {
-                setTimeout(getAlerts, 5000);
+        // ניהול זמן סיום ההתראה
+        if (detectedRedAlert) {
+            count++;
+            // אחרי 60 שניות של שקט, מחזירים את הצבע למצב רגיל
+            if (count > 60) {
+                deAlertBackground();
+                detectedRedAlert = false;
+                count = 0;
             }
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            Alerts.forEach(({ title, time }) => {
-                const alertHTML = `
-                  <div class="alt" style="margin-bottom: 8px; padding: 12px; background: rgba(255,255,255,0.05); border-right: 4px solid #555; border-radius: 4px;">
-                    <div style="font-weight: 600; font-size: 1.1em; color: #ddd; margin-bottom: 4px;">${title}</div>
-                    <div style="font-size: 0.8em; color: #888;">${time}</div>
-                  </div>
-                `;
-                if (alertsDiv) alertsDiv.insertAdjacentHTML("beforeend", alertHTML);
-            });
-            
-            getAlerts();
-        });
+        setTimeout(getAlerts, 2000); // בדיקה כל 2 שניות כדי לא להעמיס על השרת
+    } catch (err) {
+        console.error("API Error:", err);
+        setTimeout(getAlerts, 5000);
+    }
+}
 
-        if (testButton) {
-            testButton.addEventListener("click", () => {
-                handleRedAlert("שדרות (בדיקה)", "test-" + Date.now());
-            });
-        }
-        
-        // הוספת סגנון האנימציה דינמית
-        const animStyle = document.createElement('style');
-        animStyle.innerHTML = `@keyframes fadeIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }`;
-        document.head.appendChild(animStyle);
+// הפעלה ראשונית
+window.addEventListener('DOMContentLoaded', () => {
+    // טעינת היסטוריה ויזואלית
+    Alerts.forEach(({ title, time }) => {
+        const alertHTML = `
+          <div class="alt" style="margin-bottom: 8px; padding: 6px; border-bottom: 1px solid #444;">
+            <div class="altTitle" style="font-weight: 600;">${title}</div>
+            <div style="font-size: 0.9em; color: #bbb;">${time}</div>
+          </div>`;
+        if (alertsDiv) alertsDiv.insertAdjacentHTML("beforeend", alertHTML);
+    });
+    
+    getAlerts();
+});
+
+if (testButton) {
+    testButton.addEventListener("click", () => {
+        handleRedAlert("בדיקה ידנית", "test-" + Date.now());
+    });
+}
     </script>
 </body>
 </html>
