@@ -191,35 +191,42 @@ function handleRedAlert(area, id) {
 // משיכת התראות מה-API
 async function getAlerts() {
     try {
-        // הוספת timestamp כדי למנוע מהדפדפן להביא תוצאה ישנה מהזיכרון (Cache)
-        const response = await fetch(`https://api.tzevaadom.co.il/notifications?t=${Date.now()}`);
-        const alertData = await response.json();
+        // הכתובת המקורית
+        const targetUrl = "https://api.tzevaadom.co.il/notifications";
+        
+        // שימוש ב-Proxy לעקיפת חסימת CORS
+        // הפרוקסי הזה לוקח את הבקשה שלך ומעביר אותה הלאה כאילו הוא שרת
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&cache=${Date.now()}`;
 
-        // ה-API הזה מחזיר מערך של אובייקטים שבתוכם יש שדה cities
-        if (Array.isArray(alertData)) {
-            alertData.forEach(notification => {
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error("Proxy error");
+        
+        const wrapper = await response.json();
+        
+        // המידע האמיתי חוזר בתוך שדה שנקרא contents כמחרוזת JSON
+        const alertArray = JSON.parse(wrapper.contents);
+
+        if (Array.isArray(alertArray) && alertArray.length > 0) {
+            alertArray.forEach(notification => {
+                // ה-API מחזיר אובייקט עם notificationId ורשימת ערים ב-cities
                 if (notification.cities && Array.isArray(notification.cities)) {
                     notification.cities.forEach(cityName => {
-                        handleRedAlert(cityName, notification.notificationId);
+                        // בדיקה אם ההתראה כבר קיימת בהיסטוריה שלנו
+                        const alertId = notification.notificationId;
+                        if (!Alerts.find(a => a.id === alertId && a.title === cityName)) {
+                            handleRedAlert(cityName, alertId);
+                        }
                     });
                 }
             });
         }
 
-        // ניהול זמן סיום ההתראה
-        if (detectedRedAlert) {
-            count++;
-            // אחרי 60 שניות של שקט, מחזירים את הצבע למצב רגיל
-            if (count > 60) {
-                deAlertBackground();
-                detectedRedAlert = false;
-                count = 0;
-            }
-        }
+        // המשך לולאה כל 2 שניות
+        setTimeout(getAlerts, 2000);
 
-        setTimeout(getAlerts, 2000); // בדיקה כל 2 שניות כדי לא להעמיס על השרת
     } catch (err) {
-        console.error("API Error:", err);
+        console.error("API ERROR (CORS/Fetch):", err);
+        // במקרה של שגיאה, ננסה שוב אחרי 5 שניות
         setTimeout(getAlerts, 5000);
     }
 }
