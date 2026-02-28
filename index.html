@@ -1,135 +1,40 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>מערכת צבע אדום - מבצעית 2026</title>
+
+    <!-- External Libraries -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-        :root {
-            --background-color: #0c0c0c;
-            --panel-bg: #161616;
-            --accent-red: #ff3e3e;
-        }
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background-color: var(--background-color);
-            color: white;
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        /* Top Bar & Search */
-        .header {
-            padding: 10px 20px;
-            background: #1a1a1a;
-            border-bottom: 2px solid #333;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 1001;
-        }
-
-        .search-box {
-            display: flex;
-            gap: 5px;
-            background: #252525;
-            padding: 5px;
-            border-radius: 8px;
-            border: 1px solid #444;
-        }
-
-        .search-box input {
-            background: transparent;
-            border: none;
-            color: white;
-            padding: 5px 10px;
-            outline: none;
-            width: 150px;
-        }
-
-        #main-container {
-            display: flex;
-            flex: 1;
-            position: relative;
-        }
-
-        #map { flex: 1; z-index: 1; }
-
-        #side-panel {
-            width: 300px;
-            background: var(--panel-bg);
-            border-left: 1px solid #333;
-            display: flex;
-            flex-direction: column;
-            z-index: 5;
-        }
-
-        #alerts-list {
-            padding: 15px;
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        /* Alert Card */
-        .alert-card {
-            background: #222;
-            border-right: 4px solid var(--accent-red);
-            padding: 12px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-
-        /* Marker Styles */
-        .alert-marker {
-            width: 25px;
-            height: 25px;
-            background: rgba(255, 62, 62, 0.6);
-            border: 2px solid #ff3e3e;
-            border-radius: 50%;
-            animation: pulse-marker 1.2s infinite;
-        }
-
-        @keyframes pulse-marker {
-            0% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(3); opacity: 0; }
-        }
-
-        .controls {
-            position: absolute;
-            bottom: 20px;
-            right: 320px;
-            z-index: 1000;
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn {
-            background: #d32f2f;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-    </style>
+    <!-- App Styles -->
+    <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
 
     <div class="header">
-        <div>
-            <strong>צבע אדום - מבצעי</strong>
-            <span id="conn-status" style="margin-right: 10px; font-size: 0.8em; color: #4caf50;">● מחובר</span>
+        <div class="header-left">
+            <div>
+                <strong>צבע אדום - מבצעי</strong>
+                <span id="conn-status" style="margin-right: 10px; font-size: 0.8em; color: #4caf50;">● מחובר</span>
+            </div>
+
+            <!-- Toggle Button -->
+            <div class="view-toggle" id="view-toggle">
+                <div class="toggle-slider"></div>
+                <div class="toggle-option option-map">
+                    <i class="fas fa-map-location-dot"></i>
+                </div>
+                <div class="toggle-option option-tv">
+                    <i class="fas fa-tv"></i>
+                </div>
+            </div>
         </div>
-        
+
         <div class="search-box">
             <input type="text" id="citySearch" placeholder="חיפוש עיר/יישוב...">
             <button class="btn" style="padding: 5px 10px; background: #444;" onclick="searchCity()">חפש</button>
@@ -137,7 +42,31 @@
     </div>
 
     <div id="main-container">
-        <div id="map"></div>
+        <!-- View 1: Map -->
+        <div id="map-view" class="view-container">
+            <div id="map"></div>
+
+            <div class="controls">
+                <button class="btn" onclick="simulateAlert(['תל אביב', 'רמת גן', 'חולון'])">סימולציה מרכז</button>
+                <button class="btn" style="background:#555" onclick="resetView()">חזרה למפת ישראל</button>
+            </div>
+        </div>
+
+        <!-- View 2: TV/Media -->
+        <div id="tv-view" class="view-container">
+            <div class="tv-main-screen">
+                <div class="tv-placeholder" id="main-screen-content">
+                    <i class="fas fa-play-circle" style="font-size: 5rem; color: #333;"></i>
+                    <p style="margin-top: 15px; font-weight: bold;">בחר ערוץ להצגת שידור חי</p>
+                </div>
+            </div>
+
+            <div class="channel-grid" id="channel-grid">
+                <!-- Channels injected by JS -->
+            </div>
+        </div>
+
+        <!-- Shared Side Panel (Always visible) -->
         <div id="side-panel">
             <div id="alerts-list">
                 <p style="text-align:center; color:#666; margin-top:20px;">אין התראות פעילות</p>
@@ -145,101 +74,12 @@
         </div>
     </div>
 
-    <div class="controls">
-        <button class="btn" onclick="simulateAlert(['תל אביב', 'רמת גן'])">סימולציה מרכז</button>
-        <button class="btn" style="background:#555" onclick="resetView()">חזרה למפת ישראל</button>
-    </div>
-
+    <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        const ISRAEL_CENTER = [31.5, 34.8];
-        const map = L.map('map', { zoomControl: false }).setView(ISRAEL_CENTER, 8);
-        
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+    <script src="js/alerts.js"></script>
+    <script src="js/media.js"></script>
+    <script src="js/main.js"></script>
 
-        let cityData = [];
-        let activeMarkers = [];
-        let alertTimeout = null;
-
-        // טעינת נתונים
-        async function init() {
-            try {
-                const res = await fetch('https://raw.githubusercontent.com/idodaniel/israel-cities-coordinates/master/cities.json');
-                cityData = await res.json();
-            } catch (e) { console.error("Data Load Error"); }
-        }
-        init();
-
-        function resetView() {
-            map.flyTo(ISRAEL_CENTER, 8, { duration: 1.5 });
-        }
-
-        function searchCity() {
-            const val = document.getElementById('citySearch').value;
-            const city = cityData.find(c => c.name.includes(val));
-            if (city) {
-                map.flyTo([city.lat, city.lng], 13);
-                L.popup().setLatLng([city.lat, city.lng]).setContent(`<b>${city.name}</b>`).openOn(map);
-            } else {
-                alert("עיר לא נמצאה");
-            }
-        }
-
-        function handleAlerts(cities) {
-            // ניקוי טיימר חזרה למפה אם היה כזה
-            if (alertTimeout) clearTimeout(alertTimeout);
-
-            const coords = [];
-            const list = document.getElementById('alerts-list');
-            if (list.innerHTML.includes("אין התראות")) list.innerHTML = "";
-
-            cities.forEach(cityName => {
-                const city = cityData.find(c => c.name === cityName);
-                if (city) {
-                    const pos = [city.lat, city.lng];
-                    coords.push(pos);
-
-                    // יצירת מרקר
-                    const marker = L.marker(pos, {
-                        icon: L.divIcon({ className: '', html: '<div class="alert-marker"></div>', iconSize: [30,30] })
-                    }).addTo(map);
-                    activeMarkers.push(marker);
-
-                    // עדכון UI
-                    const card = document.createElement('div');
-                    card.className = 'alert-card';
-                    card.innerHTML = `<b>${cityName}</b><br><small>${new Date().toLocaleTimeString()}</small>`;
-                    list.insertBefore(card, list.firstChild);
-                }
-            });
-
-            // מצלמה עוקבת
-            if (coords.length > 0) {
-                const bounds = L.latLngBounds(coords);
-                map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 11 });
-            }
-
-            // הגדרת זום-אאוט אוטומטי אחרי 20 שניות של שקט
-            alertTimeout = setTimeout(() => {
-                resetView();
-                // ניקוי מרקרים ישנים בהדרגה
-                activeMarkers.forEach(m => map.removeLayer(m));
-                activeMarkers = [];
-            }, 20000);
-        }
-
-        // סימולציה
-        function simulateAlert(cities) {
-            handleAlerts(cities);
-        }
-
-        // מנגנון סריקה (מופשט להדגמה)
-        async function poll() {
-            // כאן יבוא ה-fetch מה-API כפי שהיה בקוד הקודם
-            // handleAlerts(data.cities);
-            setTimeout(poll, 2000);
-        }
-        poll();
-    </script>
 </body>
+
 </html>
