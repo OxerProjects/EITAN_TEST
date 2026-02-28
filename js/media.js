@@ -1,50 +1,55 @@
 // js/media.js
 
-const channels = [
-    { id: 'ch12', name: 'ערוץ 12', icon: '📺', category: 'News' },
-    { id: 'ch13', name: 'ערוץ 13', icon: '📺', category: 'News' },
-    { id: 'ch14', name: 'ערוץ 14', icon: '📡', category: 'News' },
-    { id: 'kan11', name: 'כאן 11', icon: '🌐', category: 'News' },
-    { id: 'i24', name: 'i24 News', icon: '🌍', category: 'Global' }
-];
+// Channel Links
+const news11 = `<iframe class="news" width="100%" height="100%" src="https://www.kan.org.il/live/" frameborder="0" allowfullscreen id="mainScreen" autoplay></iframe>`;
+const news12 = `<iframe class="news" width="100%" height="100%" src="https://www.mako.co.il/AjaxPage?jspName=embedHTML5video.jsp&galleryChannelId=3bf5c3a8e967f510VgnVCM2000002a0c10acRCRD&videoChannelId=8bf955222beab610VgnVCM100000700a10acRCRD&vcmid=1e2258089b67f510VgnVCM2000002a0c10acRCRD" frameborder="0" allowfullscreen id="mainScreen" autoplay></iframe>`;
+const news13 = `<iframe class="news" width="100%" height="100%" src="https://13tv.co.il/live/" frameborder="0" allowfullscreen id="mainScreen" autoplay></iframe>`;
+const news14 = `<iframe class="news" width="100%" height="100%" src="https://gurutv.online/ch14.html#google_vignette" frameborder="0" allowfullscreen id="mainScreen" autoplay></iframe>`;
 
 function initMedia() {
-    const grid = document.getElementById('channel-grid');
-    if (!grid) return;
+    const pickChanels = document.getElementById('pickChanels');
+    const chanels = document.getElementById('chanels');
+    const close2 = document.getElementById('close2');
+    const videoChanel = document.getElementById('videoChanel');
 
-    channels.forEach(ch => {
-        const card = document.createElement('div');
-        card.className = 'channel-card';
-        card.innerHTML = `
-            <div class="channel-icon">${ch.icon}</div>
-            <div class="channel-name">${ch.name}</div>
-            <div style="font-size: 0.7em; color: #666; margin-top: 5px;">${ch.category}</div>
-        `;
-        card.onclick = () => selectChannel(ch);
-        grid.appendChild(card);
+    const chanel11 = document.getElementById('11');
+    const chanel12 = document.getElementById('12');
+    const chanel13 = document.getElementById('13');
+    const chanel14 = document.getElementById('14');
+
+    if (!pickChanels || !chanels || !close2) return;
+
+    // Toggle Menu
+    pickChanels.addEventListener("click", () => {
+        chanels.classList.remove("chanels-hide");
+        chanels.classList.add("chanels-show");
+    });
+
+    close2.addEventListener("click", () => {
+        chanels.classList.remove("chanels-show");
+        chanels.classList.add("chanels-hide");
+    });
+
+    // Select Channels
+    chanel11.addEventListener("click", () => {
+        videoChanel.innerHTML = news11;
+        chanels.classList.add("chanels-hide");
+    });
+
+    chanel12.addEventListener("click", () => {
+        videoChanel.innerHTML = news12;
+        chanels.classList.add("chanels-hide");
+    });
+
+    chanel13.addEventListener("click", () => {
+        videoChanel.innerHTML = news13;
+        chanels.classList.add("chanels-hide");
+    });
+
+    chanel14.addEventListener("click", () => {
+        videoChanel.innerHTML = news14;
+        chanels.classList.add("chanels-hide");
     });
 }
 
-function selectChannel(channel) {
-    const screen = document.getElementById('main-screen-content');
-    const cards = document.querySelectorAll('.channel-card');
-
-    // Highlight selected card
-    cards.forEach(c => c.classList.remove('active'));
-    event.currentTarget.classList.add('active');
-
-    // Update Screen
-    screen.innerHTML = `
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
-            <div style="font-size: 3rem;">${channel.icon}</div>
-            <div style="font-size: 1.5rem; font-weight: bold;">שידור חי: ${channel.name}</div>
-            <div style="background: rgba(0, 123, 255, 0.2); padding: 10px 20px; border-radius: 20px; border: 1px solid var(--accent-blue);">
-                מתחבר לשרת השידור...
-            </div>
-            <div style="font-size: 0.8em; color: #555;">ID: ${channel.id}</div>
-        </div>
-    `;
-}
-
-// Export for main
 window.initMedia = initMedia;

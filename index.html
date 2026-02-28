@@ -6,11 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>מערכת צבע אדום - מבצעית 2026</title>
 
-    <!-- External Libraries -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
-    <!-- App Styles -->
     <link rel="stylesheet" href="style.css" />
 </head>
 
@@ -35,46 +32,67 @@
             </div>
         </div>
 
-        <div class="search-box">
-            <input type="text" id="citySearch" placeholder="חיפוש עיר/יישוב...">
-            <button class="btn" style="padding: 5px 10px; background: #444;" onclick="searchCity()">חפש</button>
+        <div>
+            <!-- Button to open TV Channel Picker (Custom) -->
+            <button class="btn" id="pickChanels" style="background: #444; margin-left: 10px;">בחירת ערוץ</button>
+            <button class="btn" onclick="simulateAlert(['רמת גן', 'חולון'])">סימולציה</button>
         </div>
     </div>
 
     <div id="main-container">
-        <!-- View 1: Map -->
-        <div id="map-view" class="view-container">
-            <div id="map"></div>
+        <!-- Unified Content Screen -->
+        <div id="content-area">
 
-            <div class="controls">
-                <button class="btn" onclick="simulateAlert(['תל אביב', 'רמת גן', 'חולון'])">סימולציה מרכז</button>
-                <button class="btn" style="background:#555" onclick="resetView()">חזרה למפת ישראל</button>
+            <!-- View 1: Map -->
+            <div id="map-view" class="view-container active">
+                <div id="map" style="width: 100%; height: 100%;"></div>
             </div>
-        </div>
 
-        <!-- View 2: TV/Media -->
-        <div id="tv-view" class="view-container">
-            <div class="tv-main-screen">
-                <div class="tv-placeholder" id="main-screen-content">
-                    <i class="fas fa-play-circle" style="font-size: 5rem; color: #333;"></i>
-                    <p style="margin-top: 15px; font-weight: bold;">בחר ערוץ להצגת שידור חי</p>
+            <!-- View 2: TV Content -->
+            <div id="tv-view" class="view-container">
+                <!-- TV Channel Select Overlay -->
+                <div id="chanels" class="chanels-overlay chanels-hide">
+                    <div class="chanel-grid">
+                        <button class="chanel-btn" id="11">כאן 11</button>
+                        <button class="chanel-btn" id="12">קשת 12</button>
+                        <button class="chanel-btn" id="13">רשת 13</button>
+                        <button class="chanel-btn" id="14">ערוץ 14</button>
+                    </div>
+                    <button id="close2" class="close-btn">סגור</button>
+                </div>
+
+                <div id="videoChanel" style="width: 100%; height: 100%; background: #000;">
+                    <div
+                        style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #444;">
+                        <i class="fas fa-tv" style="font-size: 5rem;"></i>
+                        <p>בחר ערוץ לצפייה</p>
+                    </div>
                 </div>
             </div>
-
-            <div class="channel-grid" id="channel-grid">
-                <!-- Channels injected by JS -->
-            </div>
         </div>
 
-        <!-- Shared Side Panel (Always visible) -->
+        <!-- Sidebar: Alerts & Stats -->
         <div id="side-panel">
-            <div id="alerts-list">
-                <p style="text-align:center; color:#666; margin-top:20px;">אין התראות פעילות</p>
+            <div class="panel-header">
+                <span id="titleAlerts" style="font-weight: bold;">התראות בזמן אמת</span>
+                <button id="clearAlerts"
+                    style="display:none; background:none; border:none; color:var(--accent-red); cursor:pointer;">נקה
+                    הכל</button>
+            </div>
+
+            <div class="alert-tabs">
+                <button class="tab-btn" id="oneAlerts">צבע אדום</button>
+                <button class="tab-btn" id="twoAlerts">חמ"ל</button>
+                <button class="tab-btn active" id="t3Alerts">היסטוריה</button>
+                <button class="tab-btn" id="t4Alerts">נתונים</button>
+            </div>
+
+            <div id="alerts-content">
+                <h3 style="text-align:center; color:#666; margin-top:20px;">אין היסטוריה להצגה</h3>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/alerts.js"></script>
     <script src="js/media.js"></script>
