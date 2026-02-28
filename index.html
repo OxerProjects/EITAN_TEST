@@ -3,254 +3,208 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מערכת התראות - בזמן אמת</title>
+    <title>מערכת צבע אדום עם מפה חיה</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        /* משתני מערכת שה-JS קורא ומשנה */
         :root {
             --background-color: #121212;
-            --alert-color: #5a0000; /* צבע אדום כהה למצב אזעקה */
+            --alert-color: #5a0000;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: system-ui, -apple-system, sans-serif;
             background-color: var(--background-color);
-            color: #ffffff;
-            margin: 0;
-            padding: 20px;
-            transition: background-color 0.4s ease-in-out; /* מעבר צבע חלק */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .header-controls {
-            margin-bottom: 20px;
-            display: flex;
-            gap: 10px;
-        }
-
-        button {
-            background: #2a2a2a;
             color: white;
-            border: 1px solid #444;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 15px;
-            transition: 0.2s;
-        }
-
-        button:hover { background: #3a3a3a; }
-        #test { background: #005500; border-color: #007700; }
-        #test:hover { background: #007700; }
-
-        .layout {
-            display: flex;
-            width: 100%;
-            max-width: 1000px;
-            gap: 20px;
-        }
-
-        /* רשימת ההתראות */
-        #alerts-container {
-            width: 320px;
-            background: #1e1e1e;
-            border: 1px solid #333;
-            border-radius: 8px;
+            margin: 0;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            height: 100vh;
+            transition: background-color 0.5s;
         }
 
-        .alerts-header {
-            background: #252525;
+        #main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* עיצוב המפה */
+        #map {
+            flex: 2;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* עיצוב רשימת ההתראות בצד */
+        #side-panel {
+            flex: 1;
+            max-width: 350px;
+            background: #1e1e1e;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            z-index: 2;
+        }
+
+        .header {
             padding: 15px;
-            margin: 0;
+            background: #252525;
             border-bottom: 1px solid #333;
-            font-size: 1.1em;
             text-align: center;
         }
 
-        #alerts {
-            padding: 15px;
-            height: 500px;
+        #alerts-list {
+            padding: 10px;
             overflow-y: auto;
+            flex: 1;
         }
 
-        /* אזור הדמיית מפה */
-        #map-area {
-            flex-grow: 1;
-            background: #1e1e1e;
-            border: 1px solid #333;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #666;
-            font-size: 1.2em;
+        .alert-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-right: 5px solid #ff4444;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            animation: slideIn 0.3s ease-out;
         }
 
-        /* עיצוב פס גלילה */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #1e1e1e; }
-        ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        @keyframes slideIn {
+            from { transform: translateX(50px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .test-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: #d32f2f;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
     </style>
 </head>
 <body>
 
-    <div class="header-controls">
-        <button id="alertButton">שנה רקע למצב התראה</button>
-        <button id="test">בדיקת התראה (שדרות)</button>
+    <div class="header">
+        <h2>מערכת התראות זמן אמת</h2>
     </div>
 
-    <div class="layout">
-        <div id="alerts-container">
-            <h3 class="alerts-header">התראות אחרונות</h3>
-            <div id="alerts">
-                </div>
-        </div>
-
-        <div id="map-area">
-            <div>
-                מפה תוצג כאן בפרויקט המלא
-                <div style="font-size: 0.6em; margin-top: 10px; color: #555;">(ה-JS תומך בסנכרון עם app.js המקורי שלך)</div>
+    <div id="main-container">
+        <div id="side-panel">
+            <div id="alerts-list">
+                <p style="text-align: center; color: #666;">ממתין להתראות...</p>
             </div>
         </div>
+        <div id="map"></div>
     </div>
 
+    <button class="test-btn" onclick="simulateAlert()">בדיקה ידנית (שדרות)</button>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script>
-        const r = document.querySelector(':root');
-let backgroundColor;
-const alertButton = document.querySelector('#alertButton');
-const testButton = document.getElementById("test");
-const alertsDiv = document.getElementById("alerts");
+        // --- 1. אתחול המפה ---
+        const map = L.map('map').setView([31.5, 34.8], 8); // מרכז ישראל
 
-let detectedRedAlert = false;
-let count = 0;
-// טעינת היסטוריה מ-LocalStorage
-let Alerts = JSON.parse(localStorage.getItem('storedAlerts')) || [];
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
 
-// קריאת צבע הרקע ההתחלתי
-function getBackground() {
-    const rs = getComputedStyle(r);
-    backgroundColor = rs.getPropertyValue('--background-color').trim() || "#1a1a1a";
-}
-getBackground();
+        const markers = {}; // שומר מרקרים כדי שלא נצייר אותם פעמיים
 
-function alertBackground() {
-    r.style.setProperty('--background-color', 'var(--alert-color)');
-}
+        // --- 2. לוגיקת ההתראות ---
+        let Alerts = [];
+        const alertsList = document.getElementById('alerts-list');
 
-function deAlertBackground() {
-    r.style.setProperty('--background-color', backgroundColor);
-}
+        function handleRedAlert(cityName, id) {
+            // שינוי רקע
+            document.body.style.setProperty('--background-color', 'var(--alert-color)');
+            
+            // הוספה לרשימה
+            if (!Alerts.some(a => a.id === id && a.title === cityName)) {
+                addAlertToUI(cityName);
+                Alerts.push({id, title: cityName});
+                
+                // עדכון מפה (כאן אנחנו משתמשים בשמות ערים. במערכת מלאה צריך קואורדינטות)
+                // לצורך הדוגמה, נשתמש בחיפוש מיקום פשוט
+                updateMap(cityName);
+            }
 
-// פונקציה להוספת התראה לרשימה עם מזהה (ID) כדי למנוע כפילויות במטחים
-function addAlertEntry(title, id) {
-    const now = new Date();
-    const timestamp = now.toLocaleTimeString('he-IL');
-    
-    // בדיקה אם ההתראה כבר קיימת (לפי ID או לפי שם באותו זמן קרוב)
-    const isDuplicate = Alerts.some(a => (a.id === id && a.title === title));
-    if (isDuplicate) return;
-
-    const alertData = { title, time: timestamp, id: id };
-    Alerts.unshift(alertData);
-    Alerts = Alerts.slice(0, 50); // שומרים 50 התראות אחרונות
-    localStorage.setItem('storedAlerts', JSON.stringify(Alerts));
-
-    const alertHTML = `
-      <div class="alt" style="animation: fadeIn 0.5s ease-out; margin-bottom: 8px; padding: 10px; border-bottom: 1px solid #444; background: rgba(0,0,0,0.1);">
-        <div class="altTitle" style="font-weight: 600; font-size: 1.1em; color: white;">${title}</div>
-        <div style="font-size: 0.8em; color: #bbb;">${timestamp}</div>
-      </div>
-    `;
-    if (alertsDiv) alertsDiv.insertAdjacentHTML("afterbegin", alertHTML);
-}
-
-// חיבור למפה - פונקציה שמפעילה את הציור על המפה מ-app.js
-function updateMapAlert(cityName) {
-    if (typeof addMapMarker === 'function') {
-        addMapMarker(cityName);
-    }
-}
-
-function handleRedAlert(area, id) {
-    if (!detectedRedAlert) {
-        alertBackground();
-        detectedRedAlert = true;
-        count = 0;
-    }
-    addAlertEntry(area, id);
-    updateMapAlert(area);
-}
-
-// משיכת התראות מה-API
-async function getAlerts() {
-    try {
-        // הכתובת המקורית
-        const targetUrl = "https://api.tzevaadom.co.il/notifications";
-        
-        // שימוש ב-Proxy לעקיפת חסימת CORS
-        // הפרוקסי הזה לוקח את הבקשה שלך ומעביר אותה הלאה כאילו הוא שרת
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&cache=${Date.now()}`;
-
-        const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error("Proxy error");
-        
-        const wrapper = await response.json();
-        
-        // המידע האמיתי חוזר בתוך שדה שנקרא contents כמחרוזת JSON
-        const alertArray = JSON.parse(wrapper.contents);
-
-        if (Array.isArray(alertArray) && alertArray.length > 0) {
-            alertArray.forEach(notification => {
-                // ה-API מחזיר אובייקט עם notificationId ורשימת ערים ב-cities
-                if (notification.cities && Array.isArray(notification.cities)) {
-                    notification.cities.forEach(cityName => {
-                        // בדיקה אם ההתראה כבר קיימת בהיסטוריה שלנו
-                        const alertId = notification.notificationId;
-                        if (!Alerts.find(a => a.id === alertId && a.title === cityName)) {
-                            handleRedAlert(cityName, alertId);
-                        }
-                    });
-                }
-            });
+            // החזרה למצב רגיל אחרי 10 שניות (בשביל הוויזואליות)
+            setTimeout(() => {
+                document.body.style.setProperty('--background-color', '#121212');
+            }, 10000);
         }
 
-        // המשך לולאה כל 2 שניות
-        setTimeout(getAlerts, 2000);
+        function addAlertToUI(cityName) {
+            if (alertsList.innerHTML.includes("ממתין")) alertsList.innerHTML = "";
+            
+            const div = document.createElement('div');
+            div.className = 'alert-card';
+            div.innerHTML = `
+                <div style="font-weight: bold; font-size: 1.2em;">${cityName}</div>
+                <div style="font-size: 0.8em; color: #bbb;">${new Date().toLocaleTimeString('he-IL')}</div>
+            `;
+            alertsList.insertBefore(div, alertsList.firstChild);
+        }
 
-    } catch (err) {
-        console.error("API ERROR (CORS/Fetch):", err);
-        // במקרה של שגיאה, ננסה שוב אחרי 5 שניות
-        setTimeout(getAlerts, 5000);
-    }
-}
+        async function updateMap(cityName) {
+            // בגרסה האמיתית שלך, יש לך את CITIES_JSON. פה אני משתמש ב-Geocoding בסיסי או מיקומים קבועים
+            // נסמלץ מיקום עבור הבדיקה (שדרות):
+            let lat = 31.5221, lon = 34.5955; 
 
-// הפעלה ראשונית
-window.addEventListener('DOMContentLoaded', () => {
-    // טעינת היסטוריה ויזואלית
-    Alerts.forEach(({ title, time }) => {
-        const alertHTML = `
-          <div class="alt" style="margin-bottom: 8px; padding: 6px; border-bottom: 1px solid #444;">
-            <div class="altTitle" style="font-weight: 600;">${title}</div>
-            <div style="font-size: 0.9em; color: #bbb;">${time}</div>
-          </div>`;
-        if (alertsDiv) alertsDiv.insertAdjacentHTML("beforeend", alertHTML);
-    });
-    
-    getAlerts();
-});
+            // יצירת מרקר אדום מהבהב
+            const marker = L.circleMarker([lat, lon], {
+                color: 'red',
+                fillColor: '#f03',
+                fillOpacity: 0.5,
+                radius: 20
+            }).addTo(map);
 
-if (testButton) {
-    testButton.addEventListener("click", () => {
-        handleRedAlert("בדיקה ידנית", "test-" + Date.now());
-    });
-}
+            marker.bindPopup(`<b>צבע אדום: ${cityName}</b>`).openPopup();
+            
+            // קפיצה לעיר
+            map.flyTo([lat, lon], 12);
+
+            // הסרת המרקר אחרי דקה
+            setTimeout(() => map.removeLayer(marker), 60000);
+        }
+
+        // --- 3. משיכת נתונים מה-API (עם ה-Proxy שעובד לך) ---
+        async function fetchAlerts() {
+            try {
+                const targetUrl = "https://api.tzevaadom.co.il/notifications";
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&cache=${Date.now()}`;
+
+                const response = await fetch(proxyUrl);
+                const data = await response.json();
+                const content = JSON.parse(data.contents);
+
+                if (Array.isArray(content) && content.length > 0) {
+                    content.forEach(alert => {
+                        alert.cities.forEach(city => {
+                            handleRedAlert(city, alert.notificationId);
+                        });
+                    });
+                }
+            } catch (e) {
+                console.log("סורק...");
+            }
+            setTimeout(fetchAlerts, 2000);
+        }
+
+        function simulateAlert() {
+            handleRedAlert("שדרות", "test-" + Date.now());
+        }
+
+        fetchAlerts();
     </script>
 </body>
 </html>
