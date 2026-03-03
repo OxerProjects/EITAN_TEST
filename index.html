@@ -4,90 +4,322 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מערכת צבע אדום - מבצעית 2026</title>
+    <title>EITAN 0.0.1</title>
 
     <!-- External Libraries -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
 
-    <!-- App Styles -->
-    <link rel="stylesheet" href="style.css" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EITAN 0.0.1</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        :root {
+            --background-color: #121212;
+            --alert-color: #5a0000;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--background-color);
+            color: white;
+            margin: 0;
+            height: 100vh;
+            transition: background-color 0.5s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* עיצוב המפה */
+        #map {
+            flex: 2;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* עיצוב רשימת ההתראות בצד */
+        #side-panel {
+            flex: 1;
+            max-width: 350px;
+            background: #1e1e1e;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            z-index: 2;
+        }
+
+        .header {
+            padding: 15px;
+            background: #252525;
+            border-bottom: 1px solid #333;
+            text-align: center;
+        }
+
+        #alerts-list {
+            padding: 10px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .alert-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-right: 5px solid #ff4444;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(3);
+                opacity: 0;
+            }
+        }
+
+        .alert-marker {
+            width: 12px;
+            height: 12px;
+            background: #ff4444;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .alert-marker::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: rgba(255, 68, 68, 0.4);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .test-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: #d32f2f;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+            font-weight: bold;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .test-btn:hover {
+            background: #ff1744;
+            transform: scale(1.05);
+        }
+
+        .test-btn.multi {
+            left: 180px;
+            background: #2e7d32;
+        }
+    </style>
 </head>
 
 <body>
 
     <div class="header">
-        <div class="header-left">
-            <div>
-                <strong>צבע אדום - מבצעי</strong>
-                <span id="conn-status" style="margin-right: 10px; font-size: 0.8em; color: #4caf50;">● מחובר</span>
-            </div>
-
-            <!-- Toggle Button -->
-            <div class="view-toggle" id="view-toggle">
-                <div class="toggle-slider"></div>
-                <div class="toggle-option option-map">
-                    <i class="fas fa-map-location-dot"></i>
-                </div>
-                <div class="toggle-option option-tv">
-                    <i class="fas fa-tv"></i>
-                </div>
-            </div>
-        </div>
-
-        <div class="search-box">
-            <input type="text" id="citySearch" placeholder="חיפוש עיר/יישוב...">
-            <button class="btn" style="padding: 5px 10px; background: #444;" onclick="searchCity()">חפש</button>
-        </div>
+        <h2>מערכת התראות זמן אמת</h2>
     </div>
 
     <div id="main-container">
-        <!-- View 1: Map -->
-        <div id="map-view" class="view-container">
-            <div id="map"></div>
-
-            <div class="controls">
-                <button class="btn" onclick="simulateAlert(['תל אביב', 'רמת גן', 'חולון'])">סימולציה מרכז</button>
-                <button class="btn" style="background:#555" onclick="resetView()">חזרה למפת ישראל</button>
-            </div>
-        </div>
-
-        <!-- View 2: TV/Media -->
-        <div id="tv-view" class="view-container">
-            <div class="tv-main-screen">
-                <div class="tv-placeholder" id="main-screen-content">
-                    <i class="fas fa-play-circle" style="font-size: 5rem; color: #333;"></i>
-                    <p style="margin-top: 15px; font-weight: bold;">בחר ערוץ להצגת שידור חי</p>
-                </div>
-            </div>
-
-            <div class="channel-grid" id="channel-grid">
-                <!-- Channels injected by JS -->
-            </div>
-        </div>
-
-        <!-- Shared Side Panel (Always visible) -->
         <div id="side-panel">
-            <div class="sidebar-tabs">
-                <button class="tab-btn active" onclick="switchSidebar('list')">התראות</button>
-                <button class="tab-btn" onclick="switchSidebar('tzeva')">צופר</button>
-                <button class="tab-btn" onclick="switchSidebar('hamal')">חמ"ל</button>
-            </div>
-
-            <div id="alerts-content">
-                <div id="alerts-list">
-                    <p style="text-align:center; color:#666; margin-top:20px;">אין התראות פעילות</p>
-                </div>
+            <div id="alerts-list">
+                <p style="text-align: center; color: #666;">ממתין להתראות...</p>
             </div>
         </div>
+        <div id="map"></div>
     </div>
 
-    <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="js/alerts.js"></script>
-    <script src="js/media.js"></script>
-    <script src="js/main.js"></script>
 
+    <script>
+        // --- 1. אתחול המפה ---
+        const map = L.map('map').setView([31.5, 34.8], 8); // מרכז ישראל
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        const markers = {}; // שומר מרקרים כדי שלא נצייר אותם פעמיים
+
+        // שלוחת חיפוש מיקומים
+        let cityData = null;
+
+        async function loadCities() {
+            try {
+                const targetUrl = "https://www.tzevaadom.co.il/static/cities.json?v=";
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&cache=${Date.now()}`;
+
+                const response = await fetch(proxyUrl);
+                const data = await response.json();
+                const content = JSON.parse(data.contents);
+                cityData = content.cities;
+                console.log("נתוני ערים נטענו בהצלחה");
+            } catch (e) {
+                console.error("שגיאה בטעינת נתוני ערים:", e);
+            }
+        }
+
+        loadCities();
+
+        // --- 2. לוגיקת ההתראות ---
+        let Alerts = [];
+        const alertsList = document.getElementById('alerts-list');
+
+        function handleRedAlert(cities, id) {
+            // הפיכה למערך אם זו עיר בודדת (תאימות לאחור)
+            const citiesArray = Array.isArray(cities) ? cities : [cities];
+
+            // שינוי רקע
+            document.body.style.setProperty('--background-color', 'var(--alert-color)');
+
+            const cityCoords = [];
+
+            citiesArray.forEach(cityName => {
+                // הוספה לרשימה אם לא קיים כבר לאותו מזהה
+                if (!Alerts.some(a => a.id === id && a.title === cityName)) {
+                    addAlertToUI(cityName);
+                    Alerts.push({ id, title: cityName });
+
+                    const coords = updateMap(cityName);
+                    if (coords) cityCoords.push(coords);
+                }
+            });
+
+            // הגדרת הזום בהתאם למספר אזורים שנמצאו
+            if (cityCoords.length > 0) {
+                if (cityCoords.length === 1) {
+                    // זום קרוב עבור עיר בודדת
+                    map.flyTo(cityCoords[0], 12);
+                } else {
+                    // זום שמתאים לכל האזורים
+                    const bounds = L.latLngBounds(cityCoords);
+                    map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+                }
+            } else {
+                // אין אזורים - זום אל כל ישראל
+                map.flyTo([31.5, 34.8], 8);
+            }
+
+            // החזרה למצב רגיל אחרי 40 שניות
+            setTimeout(() => {
+                document.body.style.setProperty('--background-color', '#121212');
+            }, 40000);
+        }
+
+        function addAlertToUI(cityName) {
+            if (alertsList.innerHTML.includes("ממתין")) alertsList.innerHTML = "";
+
+            const div = document.createElement('div');
+            div.className = 'alert-card';
+            div.innerHTML = `
+                <div style="font-weight: bold; font-size: 1.2em;">${cityName}</div>
+                <div style="font-size: 0.8em; color: #bbb;">${new Date().toLocaleTimeString('he-IL')}</div>
+            `;
+            alertsList.insertBefore(div, alertsList.firstChild);
+        }
+
+        function updateMap(cityName) {
+            if (!cityData) return null;
+
+            const cityInfo = cityData[cityName];
+            if (!cityInfo) {
+                console.warn(`העיר ${cityName} לא נמצאה במאגר המידע`);
+                return null;
+            }
+
+            const lat = cityInfo.lat;
+            const lon = cityInfo.lng;
+            const coords = [lat, lon];
+
+            // יצירת אייקון מותאם אישית מהבהב
+            const pulseIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: "<div class='alert-marker'></div>",
+                iconSize: [12, 12],
+                iconAnchor: [6, 6]
+            });
+
+            const marker = L.marker(coords, { icon: pulseIcon }).addTo(map);
+            marker.bindPopup(`<b>צבע אדום: ${cityName}</b>`).openPopup();
+
+            // הסרת המרקר אחרי 40 שניות
+            setTimeout(() => map.removeLayer(marker), 40000);
+
+            return coords;
+        }
+
+        // --- 3. משיכת נתונים מה-API ---
+        async function fetchAlerts() {
+            try {
+                const targetUrl = "https://api.tzevaadom.co.il/notifications";
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&cache=${Date.now()}`;
+
+                const response = await fetch(proxyUrl);
+                const data = await response.json();
+                const content = JSON.parse(data.contents);
+
+                if (Array.isArray(content) && content.length > 0) {
+                    content.forEach(alert => {
+                        // מעבירים את כל הערים של ההתראה יחד לטיפול
+                        handleRedAlert(alert.cities, alert.notificationId);
+                    });
+                }
+            } catch (e) {
+                console.log("סורק...");
+            }
+            setTimeout(fetchAlerts, 2000);
+        }
+
+        function simulateAlert() {
+            handleRedAlert("שדרות", "test-" + Date.now());
+        }
+
+        function simulateMultiAlert() {
+            handleRedAlert(["שדרות", "נתיבות", "אשקלון"], "test-multi-" + Date.now());
+        }
+
+        fetchAlerts();
+    </script>
 </body>
 
 </html>
