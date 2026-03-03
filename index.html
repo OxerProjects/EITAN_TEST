@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EITAN 0.0.1</title>
+    <title>EITAN</title>
 
     <!-- External Libraries -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -31,7 +31,10 @@
             <button class="nav-btn" id="channels-btn">ערוצים</button>
             <button class="nav-btn" id="timer-btn">טיימר</button>
         </div>
-        <h1 class="logo">EITAN 1.0</h1>
+        <div class="logo-wrapper">
+            <h1 class="logo">EITAN 1.0</h1>
+            <span class="developer-credit">By OMER HACKMON</span>
+        </div>
     </div>
 
     <div id="main-container">
@@ -40,7 +43,7 @@
                 <i class="fas fa-chevron-right"></i>
             </button>
             <div class="panel-header">
-                <h2 class="panel-title" id="title">מערכת התרעות</h2>
+                <h2 class="panel-title" id="title">מערכת התראות</h2>
                 <div class="mode-selector">
                     <button class="mode-btn active" title="מצב 1" id="mode-btn-1"><i
                             class="fas fa-shield-alt"></i></button>
@@ -51,7 +54,9 @@
                 </div>
             </div>
             <div id="sideBox">
-                <div class="alerts-container" id="alerts-list"></div>
+                <div class="alerts-container" id="alerts-list">
+                    <p style="text-align: center; color: #666;">אין התראות כעת</p>
+                </div>
             </div>
         </div>
         <div id="map"></div>
@@ -59,7 +64,7 @@
         <!-- Floating Video/Channel Window -->
         <div id="floating-channel-window" class="hidden">
             <div id="floating-channel-header">
-                <span class="floating-title">שידור חי - ערוץ כוחות</span>
+                <span class="floating-title">שידור חי - ערוץ</span>
                 <div class="floating-controls">
                     <button id="lock-channel-btn" class="float-btn" title="נעל למרכז"><i
                             class="fas fa-expand"></i></button>

@@ -63,7 +63,7 @@ modeBtns.forEach(btn => {
 
 modeBtn1.addEventListener('click', function () {
     sideBox.innerHTML = `<div class="alerts-container" id="alerts-list"></div>`;
-    title.innerHTML = "התראות";
+    title.innerHTML = "מערכת התראות";
     if (window.renderAllAlerts) window.renderAllAlerts();
 });
 
@@ -118,10 +118,11 @@ function renderSettings() {
             <div class="settings-section">
                 <h3><i class="fas fa-chart-bar"></i> סטטיסטיקות וסטטוס</h3>
                 <div class="setting-row" style="font-size: 13px; color: #aaa;">
-                    <div>גרסת מערכת: <span style="color: var(--main-color);">0.0.1 (Stable)</span></div>
+                    <div>גרסת מערכת: <span style="color: var(--main-color);">1.0 (Stable)</span></div>
                     <div>שטח פנוי בזיכרון: <span style="color: var(--main-color);">94%</span></div>
                     <div>זמן ריצה רציף: <span id="uptime-display" style="color: var(--main-color);">00:00:00</span></div>
                     <div>חיבור לשרת התראות: <span style="color: #4CAF50;">תקין</span></div>
+                    <div style="font-size: 10px; margin-top: 10px; color: #555; text-align: left; opacity: 0.6;">By OMER HACKMON</div>
                 </div>
             </div>
 
