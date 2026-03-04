@@ -194,7 +194,7 @@ window.renderAllAlerts = function () {
         // הערה: במציאות היינו שומרים גם את הזמן ב-Alerts, כרגע נשים זמן נוכחי או פשוט את השם
         div.innerHTML = `
             <div style="font-weight: bold; font-size: 1.2em;">${alert.title}</div>
-            <div style="font-size: 0.8em; color: #bbb;">התקבל</div>
+            <div style="font-size: 0.8em; color: #bbb;">צבא אדום (${new Date().toLocaleTimeString('he-IL')})</div>
         `;
         alertsList.appendChild(div);
     });
